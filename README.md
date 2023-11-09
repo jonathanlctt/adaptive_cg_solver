@@ -105,3 +105,14 @@ x_pcg = pcg.x_fit
 metrics_pcg = pcg.metrics
 
 ```
+
+## Recommended installation
+1. Create a Python3 virtual environment, e.g., `python3 -m venv adacg_env | source activate adacg_env/bin/activate`
+2. Clone the repository in your working directory, i.e., `git clone https://github.com/jonathanlctt/adaptive_cg_solver.git`
+3. `cd adaptive_cg_solver` and install the package and requirements `pip install -e .`
+
+## Test your installation
+Run the following test scripts:
+1. `python ./tests/test_adacg_solver.py`
+2. `python ./tests/tests_multiworker.py`
+3. `python ./tests/tests_solvers.py`
