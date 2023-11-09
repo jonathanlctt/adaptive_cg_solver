@@ -12,6 +12,7 @@ from adacg_solver.sketching.multiworker_sketcher import SketchLoader
 # For instance:
 # a = torch.randn(2500, 200, dtype=torch.float64) / np.sqrt(2500)
 # b = torch.randn(2500, dtype=torch.float64) / np.sqrt(2500)
+# reg_param = 1e-1
 
 n, d = a.shape[0]
 
