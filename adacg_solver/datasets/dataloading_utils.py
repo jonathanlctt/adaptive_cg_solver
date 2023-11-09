@@ -8,10 +8,7 @@ from sklearn.datasets import fetch_rcv1, fetch_california_housing
 from sklearn.preprocessing import LabelEncoder
 
 import torch
-import torchvision
-import torchvision.transforms as transforms
 import torch.nn as nn
-from torchvision.models import mobilenet_v3_large, MobileNet_V3_Large_Weights, mobilenet_v3_small, MobileNet_V3_Small_Weights
 
 import rff
 
@@ -144,6 +141,10 @@ def process_image_data(root_dir=f'/Users/jonathanlacotte/code/datasets',
                        model_name='mobilenet',
                        train=True,
                        student=True):
+    import torchvision
+    import torchvision.transforms as transforms
+    from torchvision.models import mobilenet_v3_large, MobileNet_V3_Large_Weights, mobilenet_v3_small, \
+        MobileNet_V3_Small_Weights
 
     root_dir = Path(root_dir)
     t_sfx = 'train' if train else 'test'

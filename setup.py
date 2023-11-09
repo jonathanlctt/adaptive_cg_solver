@@ -13,7 +13,7 @@ setup(
     author="Jonathan Lacotte",
     author_email="<jonathanlacotte@gmail.com>",
     long_description=readme,
-    url='https://github.com/jonathanlctt/randomized_ridge_regression_solver',
+    url='https://github.com/jonathanlctt/adaptive_cg_solver',
     install_requires=requirements,
     #packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
 )
