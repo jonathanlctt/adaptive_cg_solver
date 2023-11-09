@@ -2,12 +2,12 @@ import torch
 import numpy as np
 from scipy.sparse import issparse
 
-from eff_dim_solver.solvers.direct_method import DirectMethod
-from eff_dim_solver.solvers.conjugate_gradient import CG
-from eff_dim_solver.solvers.preconditioned_conjugate_gradient import PCG
-from eff_dim_solver.solvers.adaptive_conjugate_gradient import AdaptiveCG
-from eff_dim_solver.sketching.multiworker_sketcher import SketchLoader
-from eff_dim_solver.datasets.dataloading_utils import load_real_data
+from adacg_solver.solvers.direct_method import DirectMethod
+from adacg_solver.solvers.conjugate_gradient import CG
+from adacg_solver.solvers.preconditioned_conjugate_gradient import PCG
+from adacg_solver.solvers.adaptive_conjugate_gradient import AdaptiveCG
+from adacg_solver.sketching.multiworker_sketcher import SketchLoader
+from adacg_solver.datasets.dataloading_utils import load_real_data
 
 
 def run_test_helper(a, b, reg_param, num_workers=1):

@@ -3,8 +3,8 @@
 ## Usage 
 
 ```python
-from solvers.adaptive_conjugate_gradient import AdaptiveCG
-from sketching.multiworker_sketcher import SketchLoader
+from adacg_solver.solvers.adaptive_conjugate_gradient import AdaptiveCG
+from adacg_solver.sketching.multiworker_sketcher import SketchLoader
 
 # solve min_x |Ax - b|_2^2 + reg_param**2 * |x|_2^2
 # a: torch.Tensor or np.ndarray or scipy.sparse array
@@ -55,9 +55,9 @@ metrics_adacg = ada_solver.metrics
 ### Other solvers: direct method, conjugate gradient method and preconditioned conjugate gradient method
 
 ```python
-from solvers.direct_method import DirectMethod 
-from solvers.conjugate_gradient import CG
-from solvers.preconditioned_conjugate_gradient import PCG
+from adacg_solver.solvers.direct_method import DirectMethod 
+from adacg_solver.solvers.conjugate_gradient import CG
+from adacg_solver.solvers.preconditioned_conjugate_gradient import PCG
 
 direct_method = DirectMethod(a, b, reg_param,
                              rescale_data=True,

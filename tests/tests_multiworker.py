@@ -1,4 +1,4 @@
-from eff_dim_solver.sketching.multiworker_sketcher import SketchLoader
+from adacg_solver.sketching.multiworker_sketcher import SketchLoader
 import scipy
 
 import torch

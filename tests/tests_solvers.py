@@ -1,8 +1,8 @@
-from eff_dim_solver.solvers.direct_method import DirectMethod
-from eff_dim_solver.solvers.conjugate_gradient import CG
-from eff_dim_solver.solvers.preconditioned_conjugate_gradient import PCG
-from eff_dim_solver.solvers.adaptive_conjugate_gradient import AdaptiveCG
-from eff_dim_solver.sketching.multiworker_sketcher import SketchLoader
+from adacg_solver.solvers.direct_method import DirectMethod
+from adacg_solver.solvers.conjugate_gradient import CG
+from adacg_solver.solvers.preconditioned_conjugate_gradient import PCG
+from adacg_solver.solvers.adaptive_conjugate_gradient import AdaptiveCG
+from adacg_solver.sketching.multiworker_sketcher import SketchLoader
 import scipy
 
 import torch
