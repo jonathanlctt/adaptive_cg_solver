@@ -113,6 +113,6 @@ metrics_pcg = pcg.metrics
 
 ## Test your installation
 Run the following test scripts:
-1. `python ./tests/test_adacg_solver.py`
+1. `python ./tests/test_readmd_example.py`
 2. `python ./tests/tests_multiworker.py`
 3. `python ./tests/tests_solvers.py`
