@@ -7,7 +7,7 @@ from timeit import default_timer as time
 from scipy.sparse import issparse
 
 from ..sketching.sketches import hadamard_matrix, sjlt
-from srht.srht import srht_sketch
+from ..sketching.srht import srht_sketch
 from .quadratic import QuadraticSolver
 
 

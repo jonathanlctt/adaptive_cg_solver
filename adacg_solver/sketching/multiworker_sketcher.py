@@ -19,7 +19,7 @@ from torch.linalg import cholesky as torch_cholesky
 from scipy.sparse import identity as sparse_identity_matrix, isspmatrix_csc
 from scipy.sparse.linalg import factorized as sparse_factorization
 
-from srht.srht import srht_sketch
+from .srht import srht_sketch
 from .sketches import hadamard_matrix, sjlt
 from ..linear_algebra.linear_algebra import get_max_sval_approx, get_reg_param_threshold, solve_triangular
 
