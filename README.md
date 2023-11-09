@@ -9,6 +9,9 @@ from adacg_solver.sketching.multiworker_sketcher import SketchLoader
 # solve min_x |Ax - b|_2^2 + reg_param**2 * |x|_2^2
 # a: torch.Tensor or np.ndarray or scipy.sparse array
 # b: a np.ndarray of size (a.shape[0], num_targets) 
+# For instance:
+# a = torch.randn(2500, 200, dtype=torch.float64) / np.sqrt(2500)
+# b = torch.randn(2500, dtype=torch.float64) / np.sqrt(2500)
 
 n, d = a.shape[0]
 
