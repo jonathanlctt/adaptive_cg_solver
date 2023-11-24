@@ -8,84 +8,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-def test_numpy(sketch_fn='gaussian', num_workers=1):
-
-    sketch_loader = SketchLoader(num_workers=num_workers, with_torch=False)
-
-    while True:
-        if sketch_loader.handshake_done:
-            break
-        else:
-            pass
-
-    n, d = 2048, 1024
-    a = np.random.randn(n, d) / np.sqrt(n)
-    b = np.random.randn(n, 1) / np.sqrt(n)
-
-    sketch_size = 512
-    max_sketch_size = 1024
-    reg_param = 1e-1
-
-    sketch_loader.send_data_to_workers(a=a,
-                                       b=a.T @ b,
-                                       sketch_fn=sketch_fn,
-                                       sketch_size=sketch_size,
-                                       max_sketch_size=max_sketch_size,
-                                       reg_param=reg_param)
-
-    sketch_loader.prefetch()
-    for _iter in range(2):
-        while not sketch_loader.sketch_done():
-            continue
-        sa, sasa, sasa_nu = sketch_loader.get()
-
-        if _iter == 0:
-            assert sa.shape[0] == sketch_size, f'unexpected sketch size: {sa.shape[0]=}, {sketch_size=}'
-            assert sa.shape[1] == d, f'unexpected shape: {sa.shape[1]=}, {d=}'
-        elif _iter == 1:
-            expected_sketch_size = min(2*sketch_size, max_sketch_size)
-            assert sa.shape[0] == expected_sketch_size, f'unexpected sketch size: {sa.shape[0]=}, {expected_sketch_size=}'
-            assert sa.shape[1] == d, f'unexpected shape: {sa.shape[1]=}, {d=}'
-
-    sketch_loader.empty_queues()
-
-    n, d = 4096, 512
-    a = np.random.randn(n, d) / np.sqrt(n)
-    b = np.random.randn(n, 1) / np.sqrt(n)
-    sketch_size = 768
-    max_sketch_size = 1024
-    reg_param = 1e-1
-
-    sketch_loader.send_data_to_workers(a=a,
-                                       b=a.T @ b,
-                                       sketch_fn=sketch_fn,
-                                       sketch_size=sketch_size,
-                                       max_sketch_size=max_sketch_size,
-                                       reg_param=reg_param)
-
-    sketch_loader.prefetch()
-    for _iter in range(2):
-        while not sketch_loader.sketch_done():
-            continue
-        sa, sasa, sasa_nu = sketch_loader.get()
-
-        if _iter == 0:
-            assert sa.shape[0] == sketch_size, f'unexpected sketch size: {sa.shape[0]=}, {sketch_size=}'
-            assert sa.shape[1] == d, f'unexpected shape: {sa.shape[1]=}, {d=}'
-        elif _iter == 1:
-            expected_sketch_size = min(2*sketch_size, max_sketch_size)
-            assert sa.shape[0] == expected_sketch_size, f'unexpected sketch size: {sa.shape[0]=}, {expected_sketch_size=}'
-            assert sa.shape[1] == d, f'unexpected shape: {sa.shape[1]=}, {d=}'
-
-    sketch_loader.empty_queues()
-
-    del sketch_loader
-
-    logging.info(f"SUCCESS! numpy - {sketch_fn=}, {num_workers=}")
-
-
 def test_torch(sketch_fn='gaussian', num_workers=1, dtype=torch.float32):
-    sketch_loader = SketchLoader(num_workers=num_workers, with_torch=True)
+    sketch_loader = SketchLoader(num_workers=num_workers)
 
     while True:
         if sketch_loader.handshake_done:
@@ -101,12 +25,14 @@ def test_torch(sketch_fn='gaussian', num_workers=1, dtype=torch.float32):
     max_sketch_size = 1024
     reg_param = 1e-1
 
+    cg_params = {'n_iterations': 100, 'tolerance': 1e-10, 'get_full_metrics': False}
     sketch_loader.send_data_to_workers(a=a,
                                        b=a.T @ b,
                                        sketch_fn=sketch_fn,
                                        sketch_size=sketch_size,
                                        max_sketch_size=max_sketch_size,
-                                       reg_param=reg_param)
+                                       reg_param=reg_param,
+                                       cg_params=cg_params)
 
     sketch_loader.prefetch()
     for _iter in range(2):
@@ -132,12 +58,14 @@ def test_torch(sketch_fn='gaussian', num_workers=1, dtype=torch.float32):
     max_sketch_size = 1024
     reg_param = 1e-1
 
+    cg_params = {'n_iterations': 100, 'tolerance': 1e-10, 'get_full_metrics': False}
     sketch_loader.send_data_to_workers(a=a,
                                        b=a.T @ b,
                                        sketch_fn=sketch_fn,
                                        sketch_size=sketch_size,
                                        max_sketch_size=max_sketch_size,
-                                       reg_param=reg_param)
+                                       reg_param=reg_param,
+                                       cg_params=cg_params)
 
     sketch_loader.prefetch()
     for _iter in range(2):
@@ -163,7 +91,7 @@ def test_torch(sketch_fn='gaussian', num_workers=1, dtype=torch.float32):
 
 def test_scipy_sparse(sketch_fn='gaussian', sptype='csc', num_workers=1):
 
-    sketch_loader = SketchLoader(num_workers=num_workers, with_torch=False)
+    sketch_loader = SketchLoader(num_workers=num_workers)
 
     while True:
         if sketch_loader.handshake_done:
@@ -186,12 +114,15 @@ def test_scipy_sparse(sketch_fn='gaussian', sptype='csc', num_workers=1):
     max_sketch_size = 2048
     reg_param = 1e-1
 
+    cg_params = {'n_iterations': 100, 'tolerance': 1e-10, 'get_full_metrics': False}
     sketch_loader.send_data_to_workers(a=a,
                                        b=a.T @ b,
                                        sketch_fn=sketch_fn,
                                        sketch_size=sketch_size,
                                        max_sketch_size=max_sketch_size,
-                                       reg_param=reg_param)
+                                       reg_param=reg_param,
+                                       cg_params=cg_params,
+                                       )
 
     sketch_loader.prefetch()
     for _iter in range(2):
@@ -223,12 +154,14 @@ def test_scipy_sparse(sketch_fn='gaussian', sptype='csc', num_workers=1):
     max_sketch_size = 1024
     reg_param = 1e-1
 
+    cg_params = {'n_iterations': 100, 'tolerance': 1e-10, 'get_full_metrics': False}
     sketch_loader.send_data_to_workers(a=a,
                                        b=a.T @ b,
                                        sketch_fn=sketch_fn,
                                        sketch_size=sketch_size,
                                        max_sketch_size=max_sketch_size,
-                                       reg_param=reg_param)
+                                       reg_param=reg_param,
+                                       cg_params=cg_params)
 
     sketch_loader.prefetch()
     for _iter in range(2):
@@ -256,7 +189,6 @@ if __name__ == '__main__':
             if sketch_fn == 'srht' and num_workers > 1:
                 continue
 
-            test_numpy(sketch_fn=sketch_fn, num_workers=num_workers)
             test_torch(sketch_fn=sketch_fn, num_workers=num_workers, dtype=torch.float64)
             test_torch(sketch_fn=sketch_fn, num_workers=num_workers, dtype=torch.float32)
             test_scipy_sparse(sketch_fn=sketch_fn, num_workers=num_workers, sptype='csc')

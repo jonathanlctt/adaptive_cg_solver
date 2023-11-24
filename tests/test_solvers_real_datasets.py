@@ -7,14 +7,14 @@ from adacg_solver.solvers.conjugate_gradient import CG
 from adacg_solver.solvers.preconditioned_conjugate_gradient import PCG
 from adacg_solver.solvers.adaptive_conjugate_gradient import AdaptiveCG
 from adacg_solver.sketching.multiworker_sketcher import SketchLoader
-from adacg_solver.datasets.dataloading_utils import load_real_data
+from experiments.dataloading_utils import load_real_data
 
 
 def run_test_helper(a, b, reg_param, num_workers=1):
 
     def dist_fn_w(atol=1e-4):
         def dist_fn(x, y):
-            if isinstance(a, torch.Tensor):
+            if isinstance(x, torch.Tensor):
                 return torch.mean(torch.abs(x-y))
             else:
                 return np.mean(np.abs(x-y))
@@ -29,9 +29,7 @@ def run_test_helper(a, b, reg_param, num_workers=1):
     n_iterations_pcg = 50
     n_iterations_cg = 50
     n_iterations_adacg = 50
-    n_iterations_warm_up = 3
     tolerance = 1e-10
-    tolerance_warm_up = 1e-4
 
     dm = DirectMethod(a=a, b=b, reg_param=reg_param)
     dm.fit()
@@ -50,10 +48,10 @@ def run_test_helper(a, b, reg_param, num_workers=1):
             continue
         pcg = PCG(a, b, reg_param, x_opt=x_opt, rescale_data=True, check_reg_param=True, least_squares=True)
         pcg.fit(n_iterations=n_iterations_pcg,
-                    tolerance=tolerance,
-                    sketch_size=pcg_sketch_size,
-                    sketch_fn=sketch_fn,
-                    get_full_metrics=False)
+                tolerance=tolerance,
+                sketch_size=pcg_sketch_size,
+                sketch_fn=sketch_fn,
+                get_full_metrics=False)
         adj_ = 'wrong' if dist_fn(pcg.x_fit, x_opt) > 1e-4 else 'OK'
         print(f'============= {adj_} solution for PCG and {sketch_fn=} - {dist_fn(pcg.x_fit, x_opt)=}')
 
@@ -62,7 +60,7 @@ def run_test_helper(a, b, reg_param, num_workers=1):
             continue
         num_workers_ = 1 if sketch_fn == 'srht' else num_workers
         ada_solver = AdaptiveCG(a, b, reg_param, x_opt=x_opt, rescale_data=False)
-        sketch_loader = SketchLoader(num_workers=num_workers_, with_torch=isinstance(a, torch.Tensor))
+        sketch_loader = SketchLoader(num_workers=num_workers_)
 
         ada_solver.fit(
             sketch_loader=sketch_loader,
@@ -70,8 +68,7 @@ def run_test_helper(a, b, reg_param, num_workers=1):
             max_sketch_size=max_sketch_size,
             sketch_fn=sketch_fn,
             tolerance=tolerance,
-            tolerance_warm_up=tolerance_warm_up,
-            n_iterations_cg=n_iterations_warm_up,
+            n_iterations_cg=n_iterations_cg,
             n_iterations=n_iterations_adacg,
             get_full_metrics=False,
         )
@@ -101,13 +98,6 @@ if __name__ == '__main__':
     for num_workers in [1, 4]:
         run_test(dataset_name='rcv1', encode_data=False, with_torch=False, dtype=np.float64,
                  n_samples=-1, n_columns=1000, num_workers=num_workers)
-
-    for num_workers in [1, 4]:
-        for encode_data in [False]:
-            run_test(dataset_name='year_prediction', encode_data=encode_data, with_torch=False, dtype=np.float64,
-                     n_samples=-1, n_columns=-1, num_workers=num_workers)
-            run_test(dataset_name='year_prediction', encode_data=encode_data, with_torch=True, dtype=torch.float64,
-                     n_samples=-1, n_columns=-1, num_workers=num_workers)
 
     print(f"SUCCESS!")
 

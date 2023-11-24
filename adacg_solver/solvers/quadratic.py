@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from scipy.sparse import issparse
+from scipy.sparse import issparse, isspmatrix_csr, isspmatrix_csc
 
 from ..linear_algebra.linear_algebra import cholesky, solve_triangular, get_max_sval_approx, get_reg_param_threshold
 
@@ -17,12 +17,26 @@ def cholesky_factorization_wrapper(upper_mat):
 
 class QuadraticSolver:
     
-    def __init__(self, a, b, reg_param, x_opt=None, rescale_data=True, check_reg_param=True, least_squares=True):
+    def __init__(self, a, b, reg_param, x_opt=None, rescale_data=True, check_reg_param=True, least_squares=True,
+                 enforce_cuda=False, device_index=1):
 
         if b.ndim == 1:
             b = b.reshape((-1, 1))
 
-        _dtype = a.dtype
+        if not isinstance(a, torch.Tensor) and not issparse(a):
+            a = torch.from_numpy(a)
+            b = torch.from_numpy(b)
+
+        if isinstance(a, torch.Tensor):
+            if a.is_cuda:
+                self.device = a.device
+                b = b.cuda(device=self.device)
+            elif enforce_cuda and torch.cuda.is_available():
+                self.device = torch.device(type='cuda', index=device_index)
+            else:
+                self.device = torch.device(type='cpu')
+        else:
+            self.device = None
 
         if rescale_data:
             sigma_top = get_max_sval_approx(a=a, niter=1)
@@ -50,9 +64,8 @@ class QuadraticSolver:
 
         self.X = a
         if self.is_sparse:
-            self.Xt = self.X.transpose()
             if least_squares:
-                y_ = (self.Xt @ b)
+                y_ = (self.X.T @ b)
             else:
                 y_ = b
             if issparse(y_):
@@ -60,7 +73,6 @@ class QuadraticSolver:
             else:
                 self.y = y_
         else:
-            self.Xt = self.X.T
             if least_squares:
                 self.y = self.X.T @ b
             else:
@@ -72,8 +84,20 @@ class QuadraticSolver:
         if x_opt is not None and x_opt.ndim == 1:
             x_opt = x_opt.reshape((-1, 1))
         self.x_opt = x_opt
+
+        if self.with_torch and self.x_opt is not None and not isinstance(self.x_opt, torch.Tensor):
+            self.x_opt = torch.from_numpy(self.x_opt)
+            if a.is_cuda:
+                self.x_opt = self.x_opt.cuda(device=self.device, non_blocking=True)
     
         self.norm_sq_b = 0.5 * (b.multiply(b)).sum() if self.is_sparse and not isinstance(b, np.ndarray) else 0.5 * (b ** 2).sum()
+
+    def put_data_on_device(self, non_blocking=False):
+        if self.with_torch:
+            self.X = self.X.to(device=self.device, non_blocking=non_blocking)
+            self.y = self.y.to(device=self.device, non_blocking=non_blocking)
+            if self.x_opt is not None:
+                self.x_opt = self.x_opt.to(device=self.device, non_blocking=non_blocking)
 
     def compute_error(self, x):
         if x.ndim == 1:
@@ -84,36 +108,21 @@ class QuadraticSolver:
         else:
             err_ = 0.5 * ((self.X @ x) ** 2).sum() - (self.y * x).sum() + self.norm_sq_b
     
-        return err_
+        return err_.item()
 
     def id_mat(self, d):
-        return torch.eye(d, dtype=self._dtype) if self.with_torch else np.eye(d, dtype=self._dtype)
-    
-    def _sum(self, x, axis=None):
-        if self.with_torch:
-            return torch.sum(x) if axis is None else torch.sum(x, dim=axis)
-        else:
-            return np.sum(x) if axis is None else np.sum(x, axis=axis)
-    
-    def _mean(self, x):
-        return torch.mean(x) if self.with_torch else np.mean(x)
-    
-    def _any(self, x):
-        return torch.any(torch.tensor(x)) if self.with_torch else np.any(x)
-    
-    def _all(self, x):
-        return torch.all(torch.tensor(x)) if self.with_torch else np.all(x)
-    
+        return torch.eye(d, device=self.device, dtype=self._dtype) if self.with_torch else np.eye(d, dtype=self._dtype)
+
     def _copy(self, x):
         return torch.clone(x) if self.with_torch else np.copy(x)
     
     def _zeros(self, n, d):
-        return torch.zeros(n, d, dtype=self._dtype) if self.with_torch else np.zeros((n, d), dtype=self._dtype)
+        return torch.zeros(n, d, device=self.device, dtype=self._dtype) if self.with_torch else np.zeros((n, d), dtype=self._dtype)
 
     def hv_product(self, v):
         if v.ndim == 1:
             v = v.reshape((-1, 1))
-        hv = self.Xt @ (self.X @ v) + self.nu ** 2 * v
+        hv = self.X.T @ (self.X @ v) + self.nu ** 2 * v
         return hv
 
     def factor_approx_hessian(self, sa, sasa):
@@ -146,10 +155,10 @@ class QuadraticSolver:
     
     def _cg_iteration(self, x, r, p):
         hp = self.hv_product(p)
-        alpha = self._sum(r ** 2, axis=0) / self._sum(p * hp, axis=0)
+        alpha = (r ** 2).sum(axis=0) / (p * hp).sum(axis=0)
         x += alpha * p
         r_ = r - alpha * hp
-        beta = self._sum(r_ ** 2, axis=0) / self._sum(r ** 2, axis=0)
+        beta = (r_ ** 2).sum(axis=0) / (r ** 2).sum(axis=0)
         r = self._copy(r_)
         p = r + beta * p
         return x, r, p
@@ -163,16 +172,16 @@ class QuadraticSolver:
             self.factorization = factorization
         r = self.y - self.hv_product(x)
         rtilde = self.solve_approx_newton_system(z=r)
-        delta = self._sum(r * rtilde, axis=0)
+        delta = (r * rtilde).sum(axis=0)
         p = self._copy(rtilde)
         return r, p, rtilde, delta
     
     def _pcg_iteration(self, x, r, p, delta):
         hp = self.hv_product(p)
-        alpha = delta / self._sum(p * hp, axis=0)
+        alpha = delta / (p * hp).sum(axis=0)
         x_new = x + alpha * p
         r_new = r - alpha * hp
         rtilde_new = self.solve_approx_newton_system(z=r_new)
-        delta_new = self._sum(r_new * rtilde_new, axis=0)
+        delta_new = (r_new * rtilde_new).sum(axis=0)
         p_new = rtilde_new + (delta_new / delta) * p
         return x_new, r_new, p_new, rtilde_new, delta_new

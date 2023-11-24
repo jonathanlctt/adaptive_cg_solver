@@ -1,7 +1,7 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # Read README and requirements
-with open("README.md", encoding="utf8") as f:
+with open("README.md") as f:
     readme = f.read()
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
@@ -15,5 +15,5 @@ setup(
     long_description=readme,
     url='https://github.com/jonathanlctt/adaptive_cg_solver',
     install_requires=requirements,
-    #packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
+    packages=find_packages(exclude=["experiments", "notebooks", "tests"]),
 )

@@ -13,10 +13,12 @@ from .quadratic import QuadraticSolver
 
 class PCG(QuadraticSolver):
 
-    def __init__(self, a, b, reg_param, x_opt=None, rescale_data=True, check_reg_param=True, least_squares=True):
+    def __init__(self, a, b, reg_param, x_opt=None, rescale_data=True, check_reg_param=True, least_squares=True,
+                 enforce_cuda=False):
 
         QuadraticSolver.__init__(self, a=a, b=b, reg_param=reg_param, x_opt=x_opt, rescale_data=rescale_data,
-                                 check_reg_param=check_reg_param, least_squares=least_squares)
+                                 check_reg_param=check_reg_param, least_squares=least_squares,
+                                 enforce_cuda=enforce_cuda)
 
     def get_sketch(self, sketch_fn, sketch_size):
 
@@ -25,11 +27,11 @@ class PCG(QuadraticSolver):
         if sketch_fn == 'srht':
             sa = srht_sketch(self.X, sketch_size, with_stack=True)
         elif sketch_fn == 'naive_srht':
-            s = hadamard_matrix(n=self.n, sketch_size=sketch_size, with_torch=with_torch)
+            s = hadamard_matrix(n=self.n, sketch_size=sketch_size, with_torch=with_torch, device=self.device)
             sa = s @ self.X
         elif sketch_fn == 'gaussian':
             if with_torch:
-                s = torch.randn(sketch_size, self.n, dtype=self.X.dtype)
+                s = torch.randn(sketch_size, self.n, device=self.device, dtype=self.X.dtype)
             else:
                 s = np.random.randn(sketch_size, self.n).astype(self.X.dtype)
             sa = s @ self.X / np.sqrt(sketch_size)
@@ -99,12 +101,14 @@ class PCG(QuadraticSolver):
             logging.info(f"preconditioned conjugate gradient method: {sketch_fn=}, {sketch_size=}, {tolerance=}, {n_iterations=}")
             start = time()
 
+        self.put_data_on_device(non_blocking=False)
+
         sketch_size = min(self.n, sketch_size)
         sa, sasa = self.get_sketch(sketch_fn, sketch_size)
 
         x = self._zeros(self.d, self.c)
         r, p, rtilde, delta = self._init_pcg(x=x, sa=sa, sasa=sasa)
-        res_init_ = self._sum(r * r, axis=0)
+        res_init_ = (r * r).sum(axis=0)
 
         iteration = 0
 
@@ -122,12 +126,12 @@ class PCG(QuadraticSolver):
                 start = time()
 
             x, r, p, rtilde, delta = self._pcg_iteration(x=x, r=r, p=p, delta=delta)
-            res_ = self._sum(r * r, axis=0)
+            res_ = (r * r).sum(axis=0)
             err_ = res_ / res_init_
-            exit_condition = self._all([b_ <= tolerance for b_ in err_])
+            exit_condition = (err_ <= tolerance).all()
             iteration += 1
 
-            mean_err = self._mean(err_)
+            mean_err = err_.mean().item()
             if get_full_metrics:
                 times.append(time() - start)
                 errors.append(self.compute_error(x))

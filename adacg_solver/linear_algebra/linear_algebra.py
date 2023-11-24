@@ -8,9 +8,9 @@ from ..sketching.sketches import sjlt
 
 def get_reg_param_threshold(a):
     if isinstance(a, torch.Tensor):
-        return np.sqrt(min(a.shape[0], a.shape[1]) * torch.finfo(a.dtype).eps)
+        return np.sqrt(torch.finfo(a.dtype).eps)  #np.sqrt(min(a.shape[0], a.shape[1])
     else:
-        return np.sqrt(min(a.shape[0], a.shape[1]) * np.finfo(a.dtype).eps)
+        return np.sqrt(np.finfo(a.dtype).eps)  # np.sqrt(min(a.shape[0], a.shape[1])
 
 
 def get_max_sval_approx(a, m=6, niter=2):

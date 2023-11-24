@@ -27,9 +27,7 @@ def readme_fn(a, b, reg_param):
     }
 
     # Sketch S x A is computed in background while iterative solver is running
-    sketch_loader = SketchLoader(num_workers=1,  # will spawn (num_workers + 2) sub-processes
-                                 with_torch=isinstance(a, torch.Tensor),
-                                 )
+    sketch_loader = SketchLoader(num_workers=1)
 
     # WARNING: the above __init__ of MultiWorkerSketcher spawns sub-processes; that introduces an overhead (~2 seconds on a 6 cores / 12 vCPUs MacOS machine).
     # For measuring performance and excluding this overhead, we recommend running the solver once the sub-processes are initialized.
@@ -50,6 +48,7 @@ def readme_fn(a, b, reg_param):
         'sketch_fn': 'sjlt',  # sketch matrix to use; other choices = 'gaussian', 'srht',
         'tolerance': 1e-10,  # exit if squared gradient norms <= tolerance
         'n_iterations': 100,  # max number of iterations of iterative solver
+        'n_iterations_cg': 100,  # max number of iterations of conjugate gradient
         'get_full_metrics': False,  # if True, returns additional performance metrics
     }
 
@@ -107,6 +106,11 @@ if __name__ == '__main__':
     a = torch.randn(n, d, dtype=torch.float64) / np.sqrt(n)
     b = torch.randn(n, 1, dtype=torch.float64) / np.sqrt(n)
     readme_fn(a, b, reg_param)
+
+    # device = torch.device(type='cuda', index=1)
+    # a = torch.randn(n, d, device=device, dtype=torch.float64) / np.sqrt(n)
+    # b = torch.randn(n, 1, device=device, dtype=torch.float64) / np.sqrt(n)
+    # readme_fn(a, b, reg_param)
 
     a = torch.randn(n, d, dtype=torch.float32) / np.sqrt(n)
     b = torch.randn(n, 1, dtype=torch.float32) / np.sqrt(n)

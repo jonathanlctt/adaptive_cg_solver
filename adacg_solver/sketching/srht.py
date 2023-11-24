@@ -29,7 +29,7 @@ class SRHTSketcher:
             signs = signs.reshape((-1, 1))
             a_srht = signs * a
         elif isinstance(a, torch.Tensor):
-            signs = torch.tensor(signs).view((-1, 1))
+            signs = torch.tensor(signs, device=a.device).view((-1, 1))
             a_srht = signs * a
 
         return a_srht
@@ -44,7 +44,7 @@ class SRHTSketcher:
         if not with_torch:
             self.sa = np.zeros((sketch_size, a.shape[1]), dtype=a.dtype)
         else:
-            self.sa = torch.zeros((sketch_size, a.shape[1]), dtype=a.dtype)
+            self.sa = torch.zeros((sketch_size, a.shape[1]), device=a.device, dtype=a.dtype)
 
         n = a.shape[0]
         n_padded = 2 ** (np.int64(np.ceil(np.log(n) / np.log(2))))
