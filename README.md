@@ -25,7 +25,6 @@ params = {
 
 # Sketch S x A is computed in background while iterative solver is running
 sketch_loader = SketchLoader(num_workers=1,  # will spawn (num_workers + 2) sub-processes
-                             with_torch=isinstance(a, torch.Tensor),
                              )
 
 # WARNING: the above __init__ of MultiWorkerSketcher spawns sub-processes; that introduces an overhead (~2 seconds on a 6 cores / 12 vCPUs MacOS machine).
